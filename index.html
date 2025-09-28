@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ xử lý Việt Phrase</title>
+    <script src="./scripts/common.js"></script>
+    <link href="./css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Công cụ xử lý Việt Phrase</h1>
+            <p>Công cụ mạnh mẽ để xử lý, phân tích và hợp nhất các file Việt Phrase với khả năng chỉnh sửa</p>
+        </div>
+
+        <div class="tools-container">
+            <!-- Tool 1: File Parser -->
+            <div class="tool-section">
+                <div class="tool-header" onclick="toggleTool('parse')">
+                    <div class="tool-title">
+                        <div class="tool-icon">📄</div>
+                        Phân tích File Việt Phrase
+                    </div>
+                    <div class="collapse-indicator" id="parseIndicator">▼</div>
+                </div>
+                <div class="tool-content" id="parseContent">
+                    <div class="tool-inner">
+                        <div class="form-section">
+                            <div class="input-group">
+                                <label class="input-label">Chọn file .txt:</label>
+                                <input type="file" id="parseFile" class="file-input" accept=".txt">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Hoặc paste nội dung:</label>
+                                <textarea id="parseInput" class="textarea"
+                                    placeholder="Dán nội dung file vào đây...&#10;Ví dụ:&#10;XIN CHÀO=hello/hi/greetings&#10;CẢM ƠN=thank you/thanks"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="parseFile()">📊 Phân tích</button>
+                            <button class="btn btn-secondary" onclick="clearParseResult()">🗑️ Xóa</button>
+                        </div>
+
+                        <div class="loading" id="parseLoading">
+                            <div class="spinner"></div>
+                            <p>Đang phân tích file...</p>
+                        </div>
+
+                        <div class="alert error" id="parseError"></div>
+                        <div class="alert success" id="parseSuccess"></div>
+
+                        <div class="preview-section" id="parsePreview" style="display: none;">
+                            <div class="preview-header">
+                                <div class="preview-title">📊 Kết quả phân tích</div>
+                                <div class="search-container">
+                                    <input type="text" id="parseSearchKey" class="search-input"
+                                        placeholder="Tìm từ khóa...">
+                                    <input type="text" id="parseSearchMeaning" class="search-input"
+                                        placeholder="Tìm nghĩa...">
+                                    <button class="search-btn" onclick="searchInParse()">🔍 Tìm</button>
+                                </div>
+                            </div>
+
+                            <div class="stats" id="parseStats"></div>
+                            <div class="search-results" id="parseSearchResults"></div>
+
+                            <div class="input-group">
+                                <label class="input-label">Chỉnh sửa kết quả:</label>
+                                <textarea id="parseEditArea" class="edit-textarea"></textarea>
+                            </div>
+
+                            <div class="button-group">
+                                <button class="btn btn-success" onclick="downloadParseResult()">💾 Tải xuống</button>
+                                <button class="btn btn-primary" onclick="resetParseEdit()">↻ Khôi phục</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tool 2: File Merger -->
+            <div class="tool-section">
+                <div class="tool-header" onclick="toggleTool('merge')">
+                    <div class="tool-title">
+                        <div class="tool-icon">🔗</div>
+                        Hợp nhất File Việt Phrase
+                    </div>
+                    <div class="collapse-indicator" id="mergeIndicator">▼</div>
+                </div>
+                <div class="tool-content" id="mergeContent">
+                    <div class="tool-inner">
+                        <div class="form-section">
+                            <div class="input-group">
+                                <label class="input-label">File chính:</label>
+                                <input type="file" id="mainFile" class="file-input" accept=".txt">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">File phụ:</label>
+                                <input type="file" id="secondaryFile" class="file-input" accept=".txt">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Hoặc paste nội dung file chính:</label>
+                                <textarea id="mainContent" class="textarea"
+                                    placeholder="Nội dung file chính..."></textarea>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Hoặc paste nội dung file phụ:</label>
+                                <textarea id="secondaryContent" class="textarea"
+                                    placeholder="Nội dung file phụ..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="merge-options">
+                            <div class="option-card" onclick="selectMergeOption('secondary')" id="option-secondary">
+                                <div class="option-title">Nghĩa phụ</div>
+                                <div class="option-desc">Chỉ giữ nghĩa từ file phụ</div>
+                            </div>
+                            <div class="option-card" onclick="selectMergeOption('secondary-main')"
+                                id="option-secondary-main">
+                                <div class="option-title">Nghĩa phụ + chính</div>
+                                <div class="option-desc">Nghĩa phụ trước, chính sau</div>
+                            </div>
+                            <div class="option-card" onclick="selectMergeOption('main')" id="option-main">
+                                <div class="option-title">Nghĩa chính</div>
+                                <div class="option-desc">Chỉ giữ nghĩa từ file chính</div>
+                            </div>
+                            <div class="option-card selected" onclick="selectMergeOption('main-secondary')"
+                                id="option-main-secondary">
+                                <div class="option-title">Nghĩa chính + phụ</div>
+                                <div class="option-desc">Nghĩa chính trước, phụ sau</div>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="mergeFiles()">🔗 Hợp nhất</button>
+                            <button class="btn btn-secondary" onclick="clearMergeResult()">🗑️ Xóa</button>
+                        </div>
+
+                        <div class="loading" id="mergeLoading">
+                            <div class="spinner"></div>
+                            <p>Đang hợp nhất file...</p>
+                        </div>
+
+                        <div class="alert error" id="mergeError"></div>
+                        <div class="alert success" id="mergeSuccess"></div>
+
+                        <div class="preview-section" id="mergePreview" style="display: none;">
+                            <div class="preview-header">
+                                <div class="preview-title">🎯 Kết quả hợp nhất</div>
+                                <div class="search-container">
+                                    <input type="text" id="mergeSearchKey" class="search-input"
+                                        placeholder="Tìm từ khóa...">
+                                    <input type="text" id="mergeSearchMeaning" class="search-input"
+                                        placeholder="Tìm nghĩa...">
+                                    <button class="search-btn" onclick="searchInMerge()">🔍 Tìm</button>
+                                </div>
+                            </div>
+
+                            <div class="stats" id="mergeStats"></div>
+                            <div class="search-results" id="mergeSearchResults"></div>
+
+                            <div class="input-group">
+                                <label class="input-label">Chỉnh sửa kết quả (phần được sửa sẽ được highlight):</label>
+                                <textarea id="mergeEditArea" class="edit-textarea"></textarea>
+                            </div>
+
+                            <div class="button-group">
+                                <button class="btn btn-success" onclick="downloadMergeResult()">💾 Tải xuống</button>
+                                <button class="btn btn-primary" onclick="resetMergeEdit()">↻ Khôi phục</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
