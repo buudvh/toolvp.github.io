@@ -101,6 +101,7 @@ async function parseFile() {
         success.style.display = 'block';
         preview.style.display = 'block';
 
+        gotoResult('parse');
     } catch (err) {
         error.textContent = 'Lỗi: ' + err.message;
         error.style.display = 'block';
@@ -146,10 +147,11 @@ function displayParseResults(data) {
     );
 
     const outputText = Object.entries(sortedData)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('\n');
+        .map(([key, value], index) => `<span id="parse-line-${index}">${key}=${value}</span>`)
+        .join("<br>");
 
-    editArea.value = outputText;
+    editArea.innerHTML = outputText;
+
     originalParseResult = outputText;
 }
 
@@ -214,13 +216,21 @@ async function mergeFiles() {
         success.textContent = 'Hợp nhất file thành công!';
         success.style.display = 'block';
         preview.style.display = 'block';
-
+        
+        gotoResult('merge');
     } catch (err) {
         error.textContent = 'Lỗi: ' + err.message;
         error.style.display = 'block';
     } finally {
         loading.style.display = 'none';
     }
+}
+
+function gotoResult(toolType) {
+    document.getElementById(`${toolType}EditArea`).scrollIntoView({
+        behavior: 'smooth',
+        block: 'start' // Ensure the top of the element aligns with the top of the viewport
+    })
 }
 
 // Merge data by option
@@ -301,10 +311,10 @@ function displayMergeResults(data) {
     );
 
     const outputText = Object.entries(sortedData)
-        .map(([key, value]) => `${key}=${value}`)
-        .join('\n');
+        .map(([key, value], index) => `<span id="merge-line-${index}">${key}=${value}</span>`)
+        .join("<br>");
 
-    editArea.value = outputText;
+    editArea.innerHTML = outputText;
     originalMergeResult = outputText;
 
     // Highlight merged parts
@@ -351,11 +361,24 @@ function searchInParse() {
     const resultsDiv = document.getElementById('parseSearchResults');
     const editArea = document.getElementById('parseEditArea');
 
-    parseSearchMatches = performSearch(keyInput.value, meaningInput.value, lineInput.value, editArea.value, resultsDiv, 'parse');
+    parseSearchMatches = performSearch(keyInput.value, meaningInput.value, lineInput.value, editArea.innerText, resultsDiv, 'parse');
     parseCurrentIndex = 0;
 
     if (parseSearchMatches.length > 0) {
+        showNavigateButton('parse', true);
         navigateToResult('parse', 0);
+    } else {
+        showNavigateButton('parse', false);
+    }
+}
+
+function showNavigateButton(toolType, isShow) {
+    if (isShow) {
+        document.getElementById(`${toolType}PrevBtn`).style.display = "block";
+        document.getElementById(`${toolType}NextBtn`).style.display = "block";
+    } else {
+        document.getElementById(`${toolType}PrevBtn`).style.display = "none";
+        document.getElementById(`${toolType}NextBtn`).style.display = "none";
     }
 }
 
@@ -366,11 +389,14 @@ function searchInMerge() {
     const resultsDiv = document.getElementById('mergeSearchResults');
     const editArea = document.getElementById('mergeEditArea');
 
-    mergeSearchMatches = performSearch(keyInput.value, meaningInput.value, lineInput.value, editArea.value, resultsDiv, 'merge');
+    mergeSearchMatches = performSearch(keyInput.value, meaningInput.value, lineInput.value, editArea.innerText, resultsDiv, 'merge');
     mergeCurrentIndex = 0;
 
     if (mergeSearchMatches.length > 0) {
+        showNavigateButton('merge', true);
         navigateToResult('merge', 0);
+    } else {
+        showNavigateButton('merge', false);
     }
 }
 
@@ -403,24 +429,28 @@ function navigateToResult(toolType, index) {
     if (matches.length === 0 || index >= matches.length) return;
 
     const match = matches[index];
-    const lines = editArea.value.split('\n');
+    console.log(match)
+    const lines = editArea.innerHTML.split('\n');
 
-    // Calculate position to scroll to
-    const lineHeight = 22;
-    const targetPosition = (match.line - 1) * lineHeight;
+    const targetElement = document.getElementById(`${toolType}-line-${match.line - 1}`);
+    targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center' // Ensure the top of the element aligns with the top of the viewport
+    });
 
-    // Focus and scroll to line
-    editArea.focus();
-    editArea.scrollTop = Math.max(0, targetPosition - editArea.clientHeight / 2);
+    highlightElement(targetElement);
 
-    // Select the entire line
-    const startPos = lines.slice(0, match.line - 1).join('\n').length + (match.line > 1 ? 1 : 0);
-    const endPos = startPos + lines[match.line - 1].length;
-
-    editArea.setSelectionRange(startPos, endPos);
-
-    // Update results display with navigation info
     updateSearchResultsDisplay(toolType, matches, index);
+}
+
+function highlightElement(el) {
+    if (!el) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
 }
 
 function updateSearchResultsDisplay(toolType, matches, currentIndex) {
@@ -433,35 +463,6 @@ function updateSearchResultsDisplay(toolType, matches, currentIndex) {
                     Kết quả ${currentIndex + 1} / ${matches.length}
                 </div>
                 <strong>🔍 Tìm thấy ${matches.length} kết quả:</strong><br>`;
-
-    matches.slice(0, 5).forEach((match, idx) => {
-        let typeIcon = '';
-        switch (match.type) {
-            case 'line': typeIcon = '📍'; break;
-            case 'key': typeIcon = '🔑'; break;
-            case 'meaning': typeIcon = '💭'; break;
-            case 'key+meaning': typeIcon = '🎯'; break;
-            default: typeIcon = '📄';
-        }
-
-        const isCurrentResult = idx === currentIndex;
-        const resultClass = isCurrentResult ? 'current-result' : '';
-
-        resultsHtml += `<div class="${resultClass}" style="margin: 5px 0; padding: 8px; background: white; border-radius: 5px; border-left: 4px solid #74b9ff; cursor: pointer;" onclick="navigateToResult('${toolType}', ${idx})">
-                    <strong>${typeIcon} Dòng ${match.line}:</strong> ${highlightSearchTerms(match.content, keyInput.value, meaningInput.value)}
-                </div>`;
-    });
-
-    if (matches.length > 5) {
-        resultsHtml += '<div style="color: #666; font-style: italic; text-align: center; margin-top: 10px;">... và ' + (matches.length - 5) + ' kết quả khác</div>';
-    }
-
-    resultsHtml += `<div style="display:flex;">
-                        <button class="search-btn" onclick="navigateResult('parse', 'prev')"
-                        id="mergePrevBtn">⬆️ Trước</button>
-                        <button class="search-btn" onclick="navigateResult('parse', 'next')"
-                        id="mergeNextBtn">⬇️ Sau</button>
-                    </div>`;
 
     resultsDiv.innerHTML = resultsHtml;
     resultsDiv.style.display = 'block';
@@ -589,7 +590,7 @@ function highlightSearchTerms(text, keyTerm, meaningTerm) {
 
 // Download functions
 function downloadParseResult() {
-    const content = document.getElementById('parseEditArea').value;
+    const content = document.getElementById('parseEditArea').innerText;
     if (!content.trim()) {
         alert('Không có dữ liệu để tải xuống');
         return;
@@ -598,7 +599,7 @@ function downloadParseResult() {
 }
 
 function downloadMergeResult() {
-    const content = document.getElementById('mergeEditArea').value;
+    const content = document.getElementById('mergeEditArea').innerText;
     if (!content.trim()) {
         alert('Không có dữ liệu để tải xuống');
         return;
@@ -625,7 +626,7 @@ function resetParseEdit() {
 
 function resetMergeEdit() {
     const editArea = document.getElementById('mergeEditArea');
-    editArea.value = originalMergeResult;
+    editArea.innerText = originalMergeResult;
     editArea.style.borderColor = '#e0e0e0';
     editArea.style.borderWidth = '2px';
 }
