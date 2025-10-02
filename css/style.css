@@ -282,6 +282,7 @@ body {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    margin-bottom: 10px;
 }
 
 .search-input {
@@ -289,8 +290,12 @@ body {
     border: 2px solid #e0e0e0;
     border-radius: 20px;
     font-size: 14px;
-    min-width: 200px;
+    min-width: 150px;
     transition: border-color 0.3s ease;
+}
+
+.search-input[type="number"] {
+    min-width: 120px;
 }
 
 .search-input:focus {
@@ -418,6 +423,21 @@ body {
     border-radius: 8px;
     font-size: 14px;
     display: none;
+}
+
+.navigation-info {
+    background: #e3f2fd;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: 600;
+    color: #0984e3;
+}
+
+.current-result {
+    border-left: 4px solid #00b894 !important;
+    background: #d4edda !important;
 }
 
 @media (max-width: 768px) {

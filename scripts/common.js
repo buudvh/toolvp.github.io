@@ -5,6 +5,12 @@ let originalParseResult = '';
 let originalMergeResult = '';
 let selectedMergeOption = 'main-secondary';
 
+// Search navigation state
+let parseSearchMatches = [];
+let parseCurrentIndex = 0;
+let mergeSearchMatches = [];
+let mergeCurrentIndex = 0;
+
 // Collapse functionality
 function toggleTool(toolName) {
     const content = document.getElementById(toolName + 'Content');
@@ -341,64 +347,228 @@ function detectChanges(textarea, original) {
 function searchInParse() {
     const keyInput = document.getElementById('parseSearchKey');
     const meaningInput = document.getElementById('parseSearchMeaning');
+    const lineInput = document.getElementById('parseSearchLine');
     const resultsDiv = document.getElementById('parseSearchResults');
     const editArea = document.getElementById('parseEditArea');
 
-    performSearch(keyInput.value, meaningInput.value, editArea.value, resultsDiv);
+    parseSearchMatches = performSearch(keyInput.value, meaningInput.value, lineInput.value, editArea.value, resultsDiv, 'parse');
+    parseCurrentIndex = 0;
+
+    if (parseSearchMatches.length > 0) {
+        navigateToResult('parse', 0);
+    }
 }
 
 function searchInMerge() {
     const keyInput = document.getElementById('mergeSearchKey');
     const meaningInput = document.getElementById('mergeSearchMeaning');
+    const lineInput = document.getElementById('mergeSearchLine');
     const resultsDiv = document.getElementById('mergeSearchResults');
     const editArea = document.getElementById('mergeEditArea');
 
-    performSearch(keyInput.value, meaningInput.value, editArea.value, resultsDiv);
+    mergeSearchMatches = performSearch(keyInput.value, meaningInput.value, lineInput.value, editArea.value, resultsDiv, 'merge');
+    mergeCurrentIndex = 0;
+
+    if (mergeSearchMatches.length > 0) {
+        navigateToResult('merge', 0);
+    }
 }
 
-function performSearch(keyTerm, meaningTerm, content, resultsDiv) {
-    if (!keyTerm && !meaningTerm) {
+function navigateResult(toolType, direction) {
+    const matches = toolType === 'parse' ? parseSearchMatches : mergeSearchMatches;
+    let currentIndex = toolType === 'parse' ? parseCurrentIndex : mergeCurrentIndex;
+
+    if (matches.length === 0) return;
+
+    if (direction === 'next') {
+        currentIndex = (currentIndex + 1) % matches.length;
+    } else if (direction === 'prev') {
+        currentIndex = (currentIndex - 1 + matches.length) % matches.length;
+    }
+
+    if (toolType === 'parse') {
+        parseCurrentIndex = currentIndex;
+    } else {
+        mergeCurrentIndex = currentIndex;
+    }
+
+    navigateToResult(toolType, currentIndex);
+}
+
+function navigateToResult(toolType, index) {
+    const matches = toolType === 'parse' ? parseSearchMatches : mergeSearchMatches;
+    const editArea = document.getElementById(toolType + 'EditArea');
+    const resultsDiv = document.getElementById(toolType + 'SearchResults');
+
+    if (matches.length === 0 || index >= matches.length) return;
+
+    const match = matches[index];
+    const lines = editArea.value.split('\n');
+
+    // Calculate position to scroll to
+    const lineHeight = 22;
+    const targetPosition = (match.line - 1) * lineHeight;
+
+    // Focus and scroll to line
+    editArea.focus();
+    editArea.scrollTop = Math.max(0, targetPosition - editArea.clientHeight / 2);
+
+    // Select the entire line
+    const startPos = lines.slice(0, match.line - 1).join('\n').length + (match.line > 1 ? 1 : 0);
+    const endPos = startPos + lines[match.line - 1].length;
+
+    editArea.setSelectionRange(startPos, endPos);
+
+    // Update results display with navigation info
+    updateSearchResultsDisplay(toolType, matches, index);
+}
+
+function updateSearchResultsDisplay(toolType, matches, currentIndex) {
+    const resultsDiv = document.getElementById(toolType + 'SearchResults');
+    const keyInput = document.getElementById(toolType + 'SearchKey');
+    const meaningInput = document.getElementById(toolType + 'SearchMeaning');
+
+    let resultsHtml = `
+                <div class="navigation-info">
+                    Kết quả ${currentIndex + 1} / ${matches.length}
+                </div>
+                <strong>🔍 Tìm thấy ${matches.length} kết quả:</strong><br>`;
+
+    matches.slice(0, 5).forEach((match, idx) => {
+        let typeIcon = '';
+        switch (match.type) {
+            case 'line': typeIcon = '📍'; break;
+            case 'key': typeIcon = '🔑'; break;
+            case 'meaning': typeIcon = '💭'; break;
+            case 'key+meaning': typeIcon = '🎯'; break;
+            default: typeIcon = '📄';
+        }
+
+        const isCurrentResult = idx === currentIndex;
+        const resultClass = isCurrentResult ? 'current-result' : '';
+
+        resultsHtml += `<div class="${resultClass}" style="margin: 5px 0; padding: 8px; background: white; border-radius: 5px; border-left: 4px solid #74b9ff; cursor: pointer;" onclick="navigateToResult('${toolType}', ${idx})">
+                    <strong>${typeIcon} Dòng ${match.line}:</strong> ${highlightSearchTerms(match.content, keyInput.value, meaningInput.value)}
+                </div>`;
+    });
+
+    if (matches.length > 5) {
+        resultsHtml += '<div style="color: #666; font-style: italic; text-align: center; margin-top: 10px;">... và ' + (matches.length - 5) + ' kết quả khác</div>';
+    }
+
+    resultsHtml += `<div style="display:flex;">
+                        <button class="search-btn" onclick="navigateResult('parse', 'prev')"
+                        id="mergePrevBtn">⬆️ Trước</button>
+                        <button class="search-btn" onclick="navigateResult('parse', 'next')"
+                        id="mergeNextBtn">⬇️ Sau</button>
+                    </div>`;
+
+    resultsDiv.innerHTML = resultsHtml;
+    resultsDiv.style.display = 'block';
+}
+
+function performSearch(keyTerm, meaningTerm, lineNumber, content, resultsDiv, toolType) {
+    if (!keyTerm && !meaningTerm && !lineNumber) {
         resultsDiv.style.display = 'none';
-        return;
+        return [];
     }
 
     const lines = content.split('\n');
     let matches = [];
 
-    lines.forEach((line, index) => {
-        if (line.includes('=')) {
-            const [key, value] = line.split('=', 2);
-            let match = false;
-
-            if (keyTerm && key.toLowerCase().includes(keyTerm.toLowerCase())) {
-                match = true;
-            }
-
-            if (meaningTerm && value.toLowerCase().includes(meaningTerm.toLowerCase())) {
-                match = true;
-            }
-
-            if (match) {
-                matches.push({ line: index + 1, content: line });
-            }
+    // Search by line number
+    if (lineNumber) {
+        const lineIndex = parseInt(lineNumber) - 1;
+        if (lineIndex >= 0 && lineIndex < lines.length) {
+            matches.push({
+                line: lineIndex + 1,
+                content: lines[lineIndex],
+                type: 'line'
+            });
         }
-    });
+    }
+
+    // Search by content if no specific line number or if line number doesn't match
+    if (!lineNumber || matches.length === 0) {
+        lines.forEach((line, index) => {
+            if (line.includes('=')) {
+                const [key, value] = line.split('=', 2);
+                let match = false;
+                let matchType = [];
+
+                if (keyTerm && key.toLowerCase().includes(keyTerm.toLowerCase())) {
+                    match = true;
+                    matchType.push('key');
+                }
+
+                if (meaningTerm && value.toLowerCase().includes(meaningTerm.toLowerCase())) {
+                    match = true;
+                    matchType.push('meaning');
+                }
+
+                if (match) {
+                    matches.push({
+                        line: index + 1,
+                        content: line,
+                        type: matchType.join('+')
+                    });
+                }
+            }
+        });
+    }
 
     if (matches.length > 0) {
-        resultsDiv.innerHTML = `
-                    <strong>🔍 Tìm thấy ${matches.length} kết quả:</strong><br>
-                    ${matches.slice(0, 10).map(match =>
-            `<div style="margin: 5px 0; padding: 5px; background: white; border-radius: 5px;">
-                            <strong>Dòng ${match.line}:</strong> ${highlightSearchTerms(match.content, keyTerm, meaningTerm)}
-                        </div>`
-        ).join('')}
-                    ${matches.length > 10 ? '<div style="color: #666; font-style: italic;">... và ' + (matches.length - 10) + ' kết quả khác</div>' : ''}
-                `;
-        resultsDiv.style.display = 'block';
+        return matches;
     } else {
-        resultsDiv.innerHTML = '<strong>❌ Không tìm thấy kết quả nào</strong>';
+        let searchInfo = [];
+        if (keyTerm) searchInfo.push(`từ khóa "${keyTerm}"`);
+        if (meaningTerm) searchInfo.push(`nghĩa "${meaningTerm}"`);
+        if (lineNumber) searchInfo.push(`dòng ${lineNumber}`);
+
+        resultsDiv.innerHTML = `<strong>❌ Không tìm thấy kết quả nào cho ${searchInfo.join(', ')}</strong>`;
         resultsDiv.style.display = 'block';
+        return [];
     }
+}
+
+// Go to specific line
+function goToLine(toolType) {
+    const lineInput = document.getElementById(toolType + 'SearchLine');
+    const editArea = document.getElementById(toolType + 'EditArea');
+
+    const lineNumber = parseInt(lineInput.value);
+    if (!lineNumber || lineNumber < 1) {
+        alert('Vui lòng nhập số dòng hợp lệ');
+        return;
+    }
+
+    const lines = editArea.value.split('\n');
+    if (lineNumber > lines.length) {
+        alert(`Dòng ${lineNumber} không tồn tại. Tổng cộng có ${lines.length} dòng.`);
+        return;
+    }
+
+    // Calculate position to scroll to
+    const lineHeight = 22; // Approximate line height
+    const targetPosition = (lineNumber - 1) * lineHeight;
+
+    // Focus and scroll to line
+    editArea.focus();
+    editArea.scrollTop = Math.max(0, targetPosition - editArea.clientHeight / 2);
+
+    // Select the entire line
+    const startPos = lines.slice(0, lineNumber - 1).join('\n').length + (lineNumber > 1 ? 1 : 0);
+    const endPos = startPos + lines[lineNumber - 1].length;
+
+    editArea.setSelectionRange(startPos, endPos);
+
+    // Show success message
+    const resultsDiv = document.getElementById(toolType + 'SearchResults');
+    resultsDiv.innerHTML = `<strong>✅ Đã chuyển đến dòng ${lineNumber}</strong><br>
+                <div style="margin: 5px 0; padding: 8px; background: white; border-radius: 5px; border-left: 4px solid #00b894;">
+                    <strong>📍 Dòng ${lineNumber}:</strong> ${lines[lineNumber - 1] || '(dòng trống)'}
+                </div>`;
+    resultsDiv.style.display = 'block';
 }
 
 function highlightSearchTerms(text, keyTerm, meaningTerm) {
@@ -469,6 +639,7 @@ function clearParseResult() {
     document.getElementById('parseSuccess').style.display = 'none';
     document.getElementById('parseSearchKey').value = '';
     document.getElementById('parseSearchMeaning').value = '';
+    document.getElementById('parseSearchLine').value = '';
     document.getElementById('parseSearchResults').style.display = 'none';
     parsedData = {};
     originalParseResult = '';
@@ -484,74 +655,83 @@ function clearMergeResult() {
     document.getElementById('mergeSuccess').style.display = 'none';
     document.getElementById('mergeSearchKey').value = '';
     document.getElementById('mergeSearchMeaning').value = '';
+    document.getElementById('mergeSearchLine').value = '';
     document.getElementById('mergeSearchResults').style.display = 'none';
     mergedData = {};
     originalMergeResult = '';
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    addEvent
+// File input change handlers
+document.getElementById('parseFile').addEventListener('change', function () {
+    if (this.files.length > 0) {
+        document.getElementById('parseInput').value = '';
+    }
 });
 
-function addEvent() {
-    // File input change handlers
-    document.getElementById('parseFile').addEventListener('change', function () {
-        if (this.files.length > 0) {
-            document.getElementById('parseInput').value = '';
+document.getElementById('mainFile').addEventListener('change', function () {
+    if (this.files.length > 0) {
+        document.getElementById('mainContent').value = '';
+    }
+});
+
+document.getElementById('secondaryFile').addEventListener('change', function () {
+    if (this.files.length > 0) {
+        document.getElementById('secondaryContent').value = '';
+    }
+});
+
+// Initialize with first tool open
+document.addEventListener('DOMContentLoaded', function () {
+    toggleTool('parse');
+});
+
+// Add real-time search
+document.addEventListener('DOMContentLoaded', function () {
+    // Parse search
+    document.getElementById('parseSearchKey').addEventListener('input', function () {
+        if (this.value.length >= 2 || document.getElementById('parseSearchMeaning').value.length >= 2) {
+            searchInParse();
+        } else if (!this.value && !document.getElementById('parseSearchMeaning').value) {
+            document.getElementById('parseSearchResults').style.display = 'none';
         }
     });
 
-    document.getElementById('mainFile').addEventListener('change', function () {
-        if (this.files.length > 0) {
-            document.getElementById('mainContent').value = '';
+    document.getElementById('parseSearchMeaning').addEventListener('input', function () {
+        if (this.value.length >= 2 || document.getElementById('parseSearchKey').value.length >= 2) {
+            searchInParse();
+        } else if (!this.value && !document.getElementById('parseSearchKey').value) {
+            document.getElementById('parseSearchResults').style.display = 'none';
         }
     });
 
-    document.getElementById('secondaryFile').addEventListener('change', function () {
-        if (this.files.length > 0) {
-            document.getElementById('secondaryContent').value = '';
+    // Parse line search on Enter
+    document.getElementById('parseSearchLine').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            goToLine('parse');
         }
     });
 
-    // Initialize with first tool open
-    document.addEventListener('DOMContentLoaded', function () {
-        toggleTool('parse');
+    // Merge search
+    document.getElementById('mergeSearchKey').addEventListener('input', function () {
+        if (this.value.length >= 2 || document.getElementById('mergeSearchMeaning').value.length >= 2) {
+            searchInMerge();
+        } else if (!this.value && !document.getElementById('mergeSearchMeaning').value) {
+            document.getElementById('mergeSearchResults').style.display = 'none';
+        }
     });
 
-    // Add real-time search
-    document.addEventListener('DOMContentLoaded', function () {
-        // Parse search
-        document.getElementById('parseSearchKey').addEventListener('input', function () {
-            if (this.value.length >= 2 || document.getElementById('parseSearchMeaning').value.length >= 2) {
-                searchInParse();
-            } else if (!this.value && !document.getElementById('parseSearchMeaning').value) {
-                document.getElementById('parseSearchResults').style.display = 'none';
-            }
-        });
-
-        document.getElementById('parseSearchMeaning').addEventListener('input', function () {
-            if (this.value.length >= 2 || document.getElementById('parseSearchKey').value.length >= 2) {
-                searchInParse();
-            } else if (!this.value && !document.getElementById('parseSearchKey').value) {
-                document.getElementById('parseSearchResults').style.display = 'none';
-            }
-        });
-
-        // Merge search
-        document.getElementById('mergeSearchKey').addEventListener('input', function () {
-            if (this.value.length >= 2 || document.getElementById('mergeSearchMeaning').value.length >= 2) {
-                searchInMerge();
-            } else if (!this.value && !document.getElementById('mergeSearchMeaning').value) {
-                document.getElementById('mergeSearchResults').style.display = 'none';
-            }
-        });
-
-        document.getElementById('mergeSearchMeaning').addEventListener('input', function () {
-            if (this.value.length >= 2 || document.getElementById('mergeSearchKey').value.length >= 2) {
-                searchInMerge();
-            } else if (!this.value && !document.getElementById('mergeSearchKey').value) {
-                document.getElementById('mergeSearchResults').style.display = 'none';
-            }
-        });
+    document.getElementById('mergeSearchMeaning').addEventListener('input', function () {
+        if (this.value.length >= 2 || document.getElementById('mergeSearchKey').value.length >= 2) {
+            searchInMerge();
+        } else if (!this.value && !document.getElementById('mergeSearchKey').value) {
+            document.getElementById('mergeSearchResults').style.display = 'none';
+        }
     });
-}
+
+    // Merge line search on Enter
+    document.getElementById('mergeSearchLine').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            goToLine('merge');
+        }
+    });
+});

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Công cụ xử lý Việt Phrase</title>
-    <script src="./scripts/common.js"></script>
-    <link href="./css/style.css" rel="stylesheet">
+    <script src="./scripts/common.js?v=202509192100"></script>
+    <link href="./css/style.css?v=202509192100" rel="stylesheet">
 </head>
 
 <body>
@@ -57,16 +57,21 @@
                         <div class="preview-section" id="parsePreview" style="display: none;">
                             <div class="preview-header">
                                 <div class="preview-title">📊 Kết quả phân tích</div>
-                                <div class="search-container">
-                                    <input type="text" id="parseSearchKey" class="search-input"
-                                        placeholder="Tìm từ khóa...">
-                                    <input type="text" id="parseSearchMeaning" class="search-input"
-                                        placeholder="Tìm nghĩa...">
-                                    <button class="search-btn" onclick="searchInParse()">🔍 Tìm</button>
-                                </div>
                             </div>
 
                             <div class="stats" id="parseStats"></div>
+
+                            <div class="search-container">
+                                <input type="text" id="parseSearchKey" class="search-input"
+                                    placeholder="Tìm từ khóa...">
+                                <input type="text" id="parseSearchMeaning" class="search-input"
+                                    placeholder="Tìm nghĩa...">
+                                <input type="number" id="parseSearchLine" class="search-input" placeholder="Số dòng..."
+                                    min="1">
+                                <button class="search-btn" onclick="searchInParse()">🔍 Tìm</button>
+                                <button class="search-btn" onclick="goToLine('parse')">📍 Đến dòng</button>
+                            </div>
+
                             <div class="search-results" id="parseSearchResults"></div>
 
                             <div class="input-group">
@@ -155,16 +160,21 @@
                         <div class="preview-section" id="mergePreview" style="display: none;">
                             <div class="preview-header">
                                 <div class="preview-title">🎯 Kết quả hợp nhất</div>
-                                <div class="search-container">
-                                    <input type="text" id="mergeSearchKey" class="search-input"
-                                        placeholder="Tìm từ khóa...">
-                                    <input type="text" id="mergeSearchMeaning" class="search-input"
-                                        placeholder="Tìm nghĩa...">
-                                    <button class="search-btn" onclick="searchInMerge()">🔍 Tìm</button>
-                                </div>
                             </div>
 
                             <div class="stats" id="mergeStats"></div>
+
+                            <div class="search-container">
+                                <input type="text" id="mergeSearchKey" class="search-input"
+                                    placeholder="Tìm từ khóa...">
+                                <input type="text" id="mergeSearchMeaning" class="search-input"
+                                    placeholder="Tìm nghĩa...">
+                                <input type="number" id="mergeSearchLine" class="search-input" placeholder="Số dòng..."
+                                    min="1">
+                                <button class="search-btn" onclick="searchInMerge()">🔍 Tìm</button>
+                                <button class="search-btn" onclick="goToLine('merge')">📍 Đến dòng</button>
+                            </div>
+
                             <div class="search-results" id="mergeSearchResults"></div>
 
                             <div class="input-group">
