@@ -216,7 +216,7 @@ async function mergeFiles() {
         success.textContent = 'Hợp nhất file thành công!';
         success.style.display = 'block';
         preview.style.display = 'block';
-        
+
         gotoResult('merge');
     } catch (err) {
         error.textContent = 'Lỗi: ' + err.message;
@@ -588,11 +588,20 @@ function highlightSearchTerms(text, keyTerm, meaningTerm) {
     return result;
 }
 
+function showWaitLayer() {
+    document.getElementById("waitLayer").style.display = "flex";
+}
+
+function hideWaitLayer() {
+    document.getElementById("waitLayer").style.display = "none";
+}
+
 // Download functions
 function downloadParseResult() {
     const content = document.getElementById('parseEditArea').innerText;
     if (!content.trim()) {
         alert('Không có dữ liệu để tải xuống');
+        hideWaitLayer();
         return;
     }
     downloadFile(content, 'viet_phrase_parsed.txt');
@@ -662,32 +671,29 @@ function clearMergeResult() {
     originalMergeResult = '';
 }
 
-// File input change handlers
-document.getElementById('parseFile').addEventListener('change', function () {
-    if (this.files.length > 0) {
-        document.getElementById('parseInput').value = '';
-    }
-});
-
-document.getElementById('mainFile').addEventListener('change', function () {
-    if (this.files.length > 0) {
-        document.getElementById('mainContent').value = '';
-    }
-});
-
-document.getElementById('secondaryFile').addEventListener('change', function () {
-    if (this.files.length > 0) {
-        document.getElementById('secondaryContent').value = '';
-    }
-});
-
-// Initialize with first tool open
-document.addEventListener('DOMContentLoaded', function () {
-    toggleTool('parse');
-});
-
 // Add real-time search
 document.addEventListener('DOMContentLoaded', function () {
+    // Initialize with first tool open
+    toggleTool('parse');
+
+    // File input change handlers
+    document.getElementById('parseFile').addEventListener('change', function () {
+        if (this.files.length > 0) {
+            document.getElementById('parseInput').value = '';
+        }
+    });
+
+    document.getElementById('mainFile').addEventListener('change', function () {
+        if (this.files.length > 0) {
+            document.getElementById('mainContent').value = '';
+        }
+    });
+
+    document.getElementById('secondaryFile').addEventListener('change', function () {
+        if (this.files.length > 0) {
+            document.getElementById('secondaryContent').value = '';
+        }
+    });
     // Parse search
     document.getElementById('parseSearchKey').addEventListener('input', function () {
         if (this.value.length >= 2 || document.getElementById('parseSearchMeaning').value.length >= 2) {

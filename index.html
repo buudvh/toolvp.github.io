@@ -5,11 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Công cụ xử lý Việt Phrase</title>
-    <script src="./scripts/common.js?v=202510011400"></script>
-    <link href="./css/style.css?v=202510011400" rel="stylesheet">
+    <script src="./scripts/common.js?v=202510011410"></script>
+    <link href="./css/style.css?v=202510011410" rel="stylesheet">
 </head>
 
 <body>
+    <div id="waitLayer" class="wait-layer" style="display:none;">
+        <div class="spinner"></div>
+    </div>
     <div class="container">
         <div class="header">
             <h1>🔧 Công cụ xử lý Việt Phrase</h1>
@@ -76,10 +79,10 @@
 
                             <div class="input-group">
                                 <div style="display:flex;gap:10px;">
-                                    <button class="search-btn" style="display: none;" onclick="navigateResult('parse', 'prev')"
-                                        id="parsePrevBtn">⬆️ Trước</button>
-                                    <button class="search-btn" style="display: none;" onclick="navigateResult('parse', 'next')"
-                                        id="parseNextBtn">⬇️ Sau</button>
+                                    <button class="search-btn" style="display: none;"
+                                        onclick="navigateResult('parse', 'prev')" id="parsePrevBtn">⬆️ Trước</button>
+                                    <button class="search-btn" style="display: none;"
+                                        onclick="navigateResult('parse', 'next')" id="parseNextBtn">⬇️ Sau</button>
                                 </div>
                                 <label class="input-label">Chỉnh sửa kết quả:</label>
                                 <div id="parseEditArea" contenteditable="true" class="edit-textarea"></div>
@@ -185,10 +188,10 @@
 
                             <div class="input-group">
                                 <div style="display:flex;gap:10px;">
-                                    <button class="search-btn" style="display: none;" onclick="navigateResult('merge', 'prev')"
-                                        id="mergePrevBtn">⬆️ Trước</button>
-                                    <button class="search-btn" style="display: none;" onclick="navigateResult('merge', 'next')"
-                                        id="mergeNextBtn">⬇️ Sau</button>
+                                    <button class="search-btn" style="display: none;"
+                                        onclick="navigateResult('merge', 'prev')" id="mergePrevBtn">⬆️ Trước</button>
+                                    <button class="search-btn" style="display: none;"
+                                        onclick="navigateResult('merge', 'next')" id="mergeNextBtn">⬇️ Sau</button>
                                 </div>
                                 <label class="input-label">Chỉnh sửa kết quả (phần được sửa sẽ được highlight):</label>
                                 <div id="mergeEditArea" contenteditable="true" class="edit-textarea"></div>
