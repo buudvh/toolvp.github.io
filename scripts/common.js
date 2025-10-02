@@ -438,19 +438,16 @@ function navigateToResult(toolType, index) {
         block: 'center' // Ensure the top of the element aligns with the top of the viewport
     });
 
-    highlightElement(targetElement);
+    highlightElement(targetElement, toolType);
 
     updateSearchResultsDisplay(toolType, matches, index);
 }
 
-function highlightElement(el) {
+function highlightElement(el, toolType) {
     if (!el) return;
-    const range = document.createRange();
-    range.selectNodeContents(el);
-
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
+    const elements = document.querySelectorAll(`[id^="${toolType}-line-"]`);
+    elements.forEach(elm => elm.classList.remove("highlight"));
+    el.classList.add("highlight")
 }
 
 function updateSearchResultsDisplay(toolType, matches, currentIndex) {
@@ -598,6 +595,7 @@ function hideWaitLayer() {
 
 // Download functions
 function downloadParseResult() {
+    showWaitLayer();
     const content = document.getElementById('parseEditArea').innerText;
     if (!content.trim()) {
         alert('Không có dữ liệu để tải xuống');
@@ -605,15 +603,19 @@ function downloadParseResult() {
         return;
     }
     downloadFile(content, 'viet_phrase_parsed.txt');
+    hideWaitLayer();
 }
 
 function downloadMergeResult() {
+    showWaitLayer();
     const content = document.getElementById('mergeEditArea').innerText;
     if (!content.trim()) {
         alert('Không có dữ liệu để tải xuống');
+        hideWaitLayer();
         return;
     }
     downloadFile(content, 'viet_phrase_merged.txt');
+    hideWaitLayer();
 }
 
 function downloadFile(content, filename) {
