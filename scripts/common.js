@@ -1,6 +1,8 @@
 // Global variables
 let parsedData = {};
 let mergedData = {};
+let filterdData = {};
+let currentFileName = {};
 let originalParseResult = '';
 let originalMergeResult = '';
 let selectedMergeOption = 'main-secondary';
@@ -31,6 +33,7 @@ function toggleTool(toolName) {
 // File reading utility
 function readFileContent(file) {
     return new Promise((resolve, reject) => {
+        currentFileName = file.name.replace(".txt","");
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
         reader.onerror = (e) => reject(e);
@@ -602,8 +605,34 @@ function downloadParseResult() {
         hideWaitLayer();
         return;
     }
-    downloadFile(content, 'viet_phrase_parsed.txt');
+    downloadFile(content, `${currentFileName}${getNowFormatted()}.txt`);
     hideWaitLayer();
+}
+
+// Download functions
+function downloadfilterResult() {
+    showWaitLayer();
+    const content = document.getElementById('filterEditArea').innerText;
+    if (!content.trim()) {
+        alert('Không có dữ liệu để tải xuống');
+        hideWaitLayer();
+        return;
+    }
+    downloadFile(content, `${currentFileName}${getNowFormatted()}.txt`);
+    hideWaitLayer();
+}
+
+function getNowFormatted() {
+    const now = new Date();
+
+    const yyyy = now.getFullYear();
+    const MM = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+
+    return `${yyyy}${MM}${dd}${hh}${mm}${ss}`;
 }
 
 function downloadMergeResult() {
@@ -614,7 +643,7 @@ function downloadMergeResult() {
         hideWaitLayer();
         return;
     }
-    downloadFile(content, 'viet_phrase_merged.txt');
+    downloadFile(content, `${currentFileName}${getNowFormatted()}.txt`);
     hideWaitLayer();
 }
 
@@ -671,6 +700,140 @@ function clearMergeResult() {
     document.getElementById('mergeSearchResults').style.display = 'none';
     mergedData = {};
     originalMergeResult = '';
+}
+
+// Parse file function
+async function filterFile() {
+    const fileInput = document.getElementById('filterFile');
+    const contentInput = document.getElementById('filterInput');
+    const loading = document.getElementById('filterLoading');
+    const error = document.getElementById('filterError');
+    const success = document.getElementById('filterSuccess');
+    const preview = document.getElementById('filterPreview');
+
+    // Hide previous results
+    error.style.display = 'none';
+    success.style.display = 'none';
+    preview.style.display = 'none';
+    loading.style.display = 'block';
+
+    try {
+        let content = '';
+
+        if (fileInput.files.length > 0) {
+            content = await readFileContent(fileInput.files[0]);
+        } else if (contentInput.value.trim()) {
+            content = contentInput.value.trim();
+        } else {
+            throw new Error('Vui lòng chọn file hoặc nhập nội dung');
+        }
+
+        // filter content
+        filterdData = filterToDict(content);
+
+        // Display results
+        displayfilterResults(filterdData);
+
+        success.textContent = 'Phân tích file thành công!';
+        success.style.display = 'block';
+        preview.style.display = 'block';
+
+        gotoResult('filter');
+    } catch (err) {
+        error.textContent = 'Lỗi: ' + err.message;
+        error.style.display = 'block';
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+function filterToDict(content, minLength = 1, splitChar = "/", joinChar = "/") {
+    const data = {};
+    const lines = content.split('\n');
+
+    lines.forEach(line => {
+        line = line.trim();
+        if (line.includes('=')) {
+            const [key, ...valueParts] = line.split('=');
+            const value = valueParts.join('=');
+            const firstValue = value.split("/")[0];
+
+
+            if (key.length >= minLength && isTitleCase(firstValue) && !hasNumberOrSpecial(firstValue)) {
+                if (data[key]) {
+                    const tempValue = data[key] + splitChar + value;
+                    const uniqueValues = [...new Set(tempValue.split(splitChar))];
+                    data[key] = uniqueValues.join(joinChar);
+                } else {
+                    const uniqueValues = [...new Set(value.split(splitChar))];
+                    data[key] = uniqueValues.join(joinChar);
+                }
+            }
+        }
+    });
+
+    return data;
+}
+
+function isTitleCase(str) {
+    // Split the string into words
+    const words = str.split(' ');
+
+    // Check each word
+    return words.every(word => {
+        if (!word) return true; // skip empty strings
+        return word[0] === word[0].toUpperCase() &&
+            word.slice(1) === word.slice(1).toLowerCase();
+    });
+}
+
+function hasNumberOrSpecial(str) {
+    return /[^\p{L}\s]/u.test(str);
+}
+
+// Display filter results
+function displayfilterResults(data) {
+    const stats = document.getElementById('filterStats');
+    const editArea = document.getElementById('filterEditArea');
+
+    // Calculate statistics
+    const totalEntries = Object.keys(data).length;
+    const totalMeanings = Object.values(data).reduce((sum, value) =>
+        sum + value.split('/').length, 0);
+    const avgMeanings = totalEntries > 0 ? (totalMeanings / totalEntries).toFixed(1) : 0;
+
+    // Display statistics
+    stats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${totalEntries}</div>
+                    <div class="stat-label">Tổng từ khóa</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${totalMeanings}</div>
+                    <div class="stat-label">Tổng nghĩa</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${avgMeanings}</div>
+                    <div class="stat-label">TB nghĩa/từ</div>
+                </div>
+            `;
+
+    // Sort and display data
+    const sortedData = Object.fromEntries(
+        Object.entries(data).sort((a, b) => {
+            const aWords = a[0].split(' ').length;
+            const bWords = b[0].split(' ').length;
+            return aWords !== bWords ? aWords - bWords : a[0].localeCompare(b[0]);
+        })
+    );
+
+    const outputText = Object.entries(sortedData)
+        .map(([key, value], index) => `<span id="filter-line-${index}">${key}=${value}</span>`)
+        .join("<br>");
+
+    editArea.innerHTML = outputText;
+
+    originalParseResult = outputText;
 }
 
 // Add real-time search
