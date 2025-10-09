@@ -605,7 +605,7 @@ function downloadParseResult() {
         hideWaitLayer();
         return;
     }
-    downloadFile(content, `${currentFileName}${getNowFormatted()}.txt`);
+    downloadFile(content);
     hideWaitLayer();
 }
 
@@ -618,7 +618,7 @@ function downloadfilterResult() {
         hideWaitLayer();
         return;
     }
-    downloadFile(content, `${currentFileName}${getNowFormatted()}.txt`);
+    downloadFile(content);
     hideWaitLayer();
 }
 
@@ -643,7 +643,7 @@ function downloadMergeResult() {
         hideWaitLayer();
         return;
     }
-    downloadFile(content, `${currentFileName}${getNowFormatted()}.txt`);
+    downloadFile(content);
     hideWaitLayer();
 }
 
@@ -652,7 +652,7 @@ function downloadFile(content, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename;
+    a.download = `${currentFileName}_${getNowFormatted()}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
