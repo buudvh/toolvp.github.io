@@ -23,6 +23,121 @@
         </div>
 
         <div class="tools-container">
+            <!-- Tool 3: Filter Viet Phrase -->
+            <div class="tool-section">
+                <div class="tool-header" onclick="toggleTool('filter')">
+                    <div class="tool-title">
+                        <div class="tool-icon">📄</div>
+                        Lọc name trong vietpharse
+                    </div>
+                    <div class="collapse-indicator" id="filterIndicator">▼</div>
+                </div>
+                <div class="tool-content" id="filterContent">
+                    <div class="tool-inner">
+                        <div class="form-section">
+                            <div class="input-group">
+                                <label class="input-label">Chọn file .txt:</label>
+                                <input type="file" id="filterFile" class="file-input" accept=".txt">
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label">Hoặc paste nội dung:</label>
+                                <textarea id="filterInput" class="textarea"
+                                    placeholder="Dán nội dung file vào đây...&#10;Ví dụ:&#10;XIN CHÀO=hello/hi/greetings&#10;CẢM ƠN=thank you/thanks"></textarea>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="input-label" style="margin-bottom:5px;">Các điều kiện bộ lọc:</label>
+                                <div
+                                    style="display:flex; flex-direction:column; gap:14px; margin-left:5px; background:#f8f9fa; padding:15px; border-radius:8px; border:1px solid #e0e0e0;">
+                                    <div style="display:flex; align-items:center; justify-content: space-between;">
+                                        <label for="filterEmptyRhs"
+                                            style="cursor:pointer; user-select:none; font-weight:500; font-size: 13px; color: #2d3436;">Bỏ
+                                            qua các Name trống vế nghĩa (Tiếng Việt)</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="filterEmptyRhs" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div style="display:flex; align-items:center; justify-content: space-between;">
+                                        <label for="filterOneCharChinese"
+                                            style="cursor:pointer; user-select:none; font-weight:500; font-size: 13px; color: #2d3436;">Bỏ
+                                            qua các Name chỉ có 1 ký tự Tiếng Trung</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="filterOneCharChinese" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div style="display:flex; align-items:center; justify-content: space-between;">
+                                        <label for="filterNoCapitalized"
+                                            style="cursor:pointer; user-select:none; font-weight:500; font-size: 13px; color: #2d3436;">Bỏ
+                                            qua nếu vế nghĩa không có từ Viết Hoa</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="filterNoCapitalized" checked>
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="filterFile()">📊 Lọc</button>
+                            <button class="btn btn-secondary" onclick="clearfilterResult()">🗑️ Xóa</button>
+                        </div>
+
+                        <div class="loading" id="filterLoading">
+                            <div class="spinner"></div>
+                            <p>Đang phân tích file...</p>
+                        </div>
+
+                        <div class="alert error" id="filterError"></div>
+                        <div class="alert success" id="filterSuccess"></div>
+
+                        <div class="preview-section" id="filterPreview" style="display: none;">
+                            <div class="preview-header">
+                                <div class="preview-title">📊 Kết quả phân tích</div>
+                            </div>
+
+                            <div class="stats" id="filterStats"></div>
+
+                            <div class="search-container">
+                                <input type="text" id="filterSearchKey" class="search-input"
+                                    placeholder="Tìm từ khóa...">
+                                <input type="text" id="filterSearchMeaning" class="search-input"
+                                    placeholder="Tìm nghĩa...">
+                                <input type="number" id="filterSearchLine" class="search-input" placeholder="Số dòng..."
+                                    min="1">
+                                <button class="search-btn" onclick="searchInfilter()">🔍 Tìm</button>
+                                <button class="search-btn" onclick="goToLine('filter')">📍 Đến dòng</button>
+                            </div>
+
+                            <div class="search-results" id="filterSearchResults"></div>
+
+                            <div class="input-group">
+                                <div style="display:flex;gap:10px;">
+                                    <button class="search-btn" style="display: none;"
+                                        onclick="navigateResult('filter', 'prev')" id="filterPrevBtn">⬆️ Trước</button>
+                                    <button class="search-btn" style="display: none;"
+                                        onclick="navigateResult('filter', 'next')" id="filterNextBtn">⬇️ Sau</button>
+                                </div>
+                                <label class="input-label">Chỉnh sửa kết quả:</label>
+                                <div id="filterEditArea" contenteditable="true" class="edit-textarea"></div>
+                            </div>
+
+                            <div class="button-group">
+                                <button class="btn btn-success" onclick="downloadfilterResult()">💾 Tải xuống file đã
+                                    lọc</button>
+                                <button class="btn btn-info" onclick="downloadOriginalfilterResult()">📥 Tải xuống file
+                                    nguyên</button>
+                                <button class="btn btn-primary" onclick="resetfilterEdit()">↻ Khôi phục</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tool 1: File Parser -->
             <div class="tool-section">
                 <div class="tool-header" onclick="toggleTool('parse')">
@@ -208,90 +323,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="tool-section">
-                <div class="tool-header" onclick="toggleTool('filter')">
-                    <div class="tool-title">
-                        <div class="tool-icon">📄</div>
-                        Lọc name trong vietpharse
-                    </div>
-                    <div class="collapse-indicator" id="filterIndicator">▼</div>
-                </div>
-                <div class="tool-content" id="filterContent">
-                    <div class="tool-inner">
-                        <div class="form-section">
-                            <div class="input-group">
-                                <label class="input-label">Chọn file .txt:</label>
-                                <input type="file" id="filterFile" class="file-input" accept=".txt">
-                            </div>
-
-                            <div class="input-group">
-                                <label class="input-label">Hoặc paste nội dung:</label>
-                                <textarea id="filterInput" class="textarea"
-                                    placeholder="Dán nội dung file vào đây...&#10;Ví dụ:&#10;XIN CHÀO=hello/hi/greetings&#10;CẢM ƠN=thank you/thanks"></textarea>
-                            </div>
-
-                            <div class="input-group" style="display:flex; align-items:center;">
-                                <input type="checkbox" id="filterEmptyRhs" checked style="margin-right:10px; width:18px; height:18px; cursor:pointer;">
-                                <label for="filterEmptyRhs" class="input-label" style="margin-bottom:0; cursor:pointer; user-select:none;">Lọc các VietPhrase có vế phải rỗng</label>
-                            </div>
-                        </div>
-
-                        <div class="button-group">
-                            <button class="btn btn-primary" onclick="filterFile()">📊 Lọc</button>
-                            <button class="btn btn-secondary" onclick="clearfilterResult()">🗑️ Xóa</button>
-                        </div>
-
-                        <div class="loading" id="filterLoading">
-                            <div class="spinner"></div>
-                            <p>Đang phân tích file...</p>
-                        </div>
-
-                        <div class="alert error" id="filterError"></div>
-                        <div class="alert success" id="filterSuccess"></div>
-
-                        <div class="preview-section" id="filterPreview" style="display: none;">
-                            <div class="preview-header">
-                                <div class="preview-title">📊 Kết quả phân tích</div>
-                            </div>
-
-                            <div class="stats" id="filterStats"></div>
-
-                            <div class="search-container">
-                                <input type="text" id="filterSearchKey" class="search-input"
-                                    placeholder="Tìm từ khóa...">
-                                <input type="text" id="filterSearchMeaning" class="search-input"
-                                    placeholder="Tìm nghĩa...">
-                                <input type="number" id="filterSearchLine" class="search-input" placeholder="Số dòng..."
-                                    min="1">
-                                <button class="search-btn" onclick="searchInfilter()">🔍 Tìm</button>
-                                <button class="search-btn" onclick="goToLine('filter')">📍 Đến dòng</button>
-                            </div>
-
-                            <div class="search-results" id="filterSearchResults"></div>
-
-                            <div class="input-group">
-                                <div style="display:flex;gap:10px;">
-                                    <button class="search-btn" style="display: none;"
-                                        onclick="navigateResult('filter', 'prev')" id="filterPrevBtn">⬆️ Trước</button>
-                                    <button class="search-btn" style="display: none;"
-                                        onclick="navigateResult('filter', 'next')" id="filterNextBtn">⬇️ Sau</button>
-                                </div>
-                                <label class="input-label">Chỉnh sửa kết quả:</label>
-                                <div id="filterEditArea" contenteditable="true" class="edit-textarea"></div>
-                            </div>
-
-                            <div class="button-group">
-                                <button class="btn btn-success" onclick="downloadfilterResult()">💾 Tải xuống file đã lọc</button>
-                                <button class="btn btn-info" onclick="downloadOriginalfilterResult()">📥 Tải xuống file nguyên</button>
-                                <button class="btn btn-primary" onclick="resetfilterEdit()">↻ Khôi phục</button>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -299,8 +330,11 @@
     <div class="modal-overlay" id="filterModalOverlay" onclick="if(event.target === this) closeFilterModal()">
         <div class="modal-content">
             <span class="modal-close" onclick="closeFilterModal()">&times;</span>
-            <h4 style="color:#d32f2f; margin-bottom: 15px; font-size: 1.2rem;">🚫 Dữ liệu bị loại bỏ (<span id="filterInvalidCount">0</span>)</h4>
-            <div class="modal-body" id="filterInvalidList" style="background: #ffebee; color: #b71c1c; padding: 15px; border-radius: 8px; font-size: 14px; border: 1px solid #ffcdd2;"></div>
+            <h4 style="color:#d32f2f; margin-bottom: 15px; font-size: 1.2rem;">🚫 Dữ liệu bị loại bỏ (<span
+                    id="filterInvalidCount">0</span>)</h4>
+            <div class="modal-body" id="filterInvalidList"
+                style="background: #ffebee; color: #b71c1c; padding: 15px; border-radius: 8px; font-size: 14px; border: 1px solid #ffcdd2;">
+            </div>
         </div>
     </div>
 </body>

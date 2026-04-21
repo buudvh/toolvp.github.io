@@ -271,7 +271,7 @@ function downloadFile(content, filename) {
 // Global DOM Content Loaded Listener
 document.addEventListener('DOMContentLoaded', function () {
     // Initialize with first tool open
-    toggleTool('parse');
+    toggleTool('filter');
 
     // File input change handlers
     document.getElementById('parseFile')?.addEventListener('change', function () {

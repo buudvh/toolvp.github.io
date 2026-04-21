@@ -33,10 +33,18 @@ async function filterFile() {
             throw new Error('Vui lòng chọn file hoặc nhập nội dung');
         }
 
-        // filter content
+        // Thiết lập parameter từ option UI
         const cbEmptyRhs = document.getElementById('filterEmptyRhs');
         const filterEmptyRhs = cbEmptyRhs ? cbEmptyRhs.checked : true;
-        const result = filterToDict(content, 1, "/", "/", filterEmptyRhs);
+        
+        const cbOneChar = document.getElementById('filterOneCharChinese');
+        const filterOneChar = cbOneChar ? cbOneChar.checked : true;
+        
+        const cbNoCapitalized = document.getElementById('filterNoCapitalized');
+        const filterNoCapitalized = cbNoCapitalized ? cbNoCapitalized.checked : true;
+
+        // Tiến hành filter content
+        const result = filterToDict(content, 1, "/", "/", filterEmptyRhs, filterOneChar, filterNoCapitalized);
         filterdData = result.validData;
         filterdOriginalData = result.originalData;
         invalidLinesInfo = result.invalidLines;
@@ -58,7 +66,7 @@ async function filterFile() {
     }
 }
 
-function filterToDict(content, minLength = 1, splitChar = "/", joinChar = "/", filterEmptyRhs = true) {
+function filterToDict(content, minLength = 1, splitChar = "/", joinChar = "/", filterEmptyRhs = true, filterOneChar = true, filterNoCapitalized = true) {
     const validData = {};
     const originalData = {};
     const invalidLines = [];
@@ -103,7 +111,7 @@ function filterToDict(content, minLength = 1, splitChar = "/", joinChar = "/", f
         const chineseCharCount = chineseChars.length;
 
         // Điều kiện 1: Loại bỏ name chỉ có 1 ký tự tiếng Trung
-        if (chineseCharCount === 1) {
+        if (filterOneChar && chineseCharCount === 1) {
             invalidLines.push({
                 line: trimmed,
                 reason: `Chỉ có 1 ký tự tiếng Trung: "${key}"`
@@ -112,7 +120,7 @@ function filterToDict(content, minLength = 1, splitChar = "/", joinChar = "/", f
         }
 
         // Điều kiện 2: Loại bỏ name không có từ tiếng Việt nào viết hoa ở cụm nghĩa
-        if (!hasAtLeastOneCapitalizedWord(valueSnippet)) {
+        if (filterNoCapitalized && !hasAtLeastOneCapitalizedWord(valueSnippet)) {
             invalidLines.push({
                 line: trimmed,
                 reason: `Không có từ tiếng Việt nào viết hoa ở vế nghĩa: "${valueSnippet}"`
