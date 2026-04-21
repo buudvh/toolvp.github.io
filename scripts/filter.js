@@ -19,7 +19,7 @@ async function filterFile() {
     error.style.display = 'none';
     success.style.display = 'none';
     preview.style.display = 'none';
-    if(invalidSection) invalidSection.style.display = 'none';
+    if (invalidSection) invalidSection.style.display = 'none';
     loading.style.display = 'block';
 
     try {
@@ -36,10 +36,10 @@ async function filterFile() {
         // Thiết lập parameter từ option UI
         const cbEmptyRhs = document.getElementById('filterEmptyRhs');
         const filterEmptyRhs = cbEmptyRhs ? cbEmptyRhs.checked : true;
-        
+
         const cbOneChar = document.getElementById('filterOneCharChinese');
         const filterOneChar = cbOneChar ? cbOneChar.checked : true;
-        
+
         const cbNoCapitalized = document.getElementById('filterNoCapitalized');
         const filterNoCapitalized = cbNoCapitalized ? cbNoCapitalized.checked : true;
 
@@ -70,14 +70,14 @@ function filterToDict(content, minLength = 1, splitChar = "/", joinChar = "/", f
     const validData = {};
     const originalData = {};
     const invalidLines = [];
-    
+
     // Parse từng dòng dữ liệu
     const lines = content.split(/\r?\n/);
 
     lines.forEach(line => {
         const trimmed = line.trim();
         if (!trimmed) return;
-        
+
         const parts = trimmed.split('=');
         if (parts.length < 2) {
             invalidLines.push({ line: trimmed, reason: 'Không đúng format $中文=Tiếng Việt' });
@@ -86,7 +86,7 @@ function filterToDict(content, minLength = 1, splitChar = "/", joinChar = "/", f
 
         const key = parts[0].trim();
         const valueSnippet = parts.slice(1).join('=').trim();
-        
+
         // Data nguyên sẽ cộng hết 100% data vào dưới dạng filter trùng lặp dictionary như các Tool khác
         if (key.length >= minLength) {
             if (originalData[key]) {
@@ -127,14 +127,14 @@ function filterToDict(content, minLength = 1, splitChar = "/", joinChar = "/", f
             });
             return;
         }
-        
+
         // Pass validation -> Push logic vào valid data (Merge format)
         if (key.length >= minLength) {
             if (validData[key]) {
-                 const uniqueValues = [...new Set((validData[key] + splitChar + valueSnippet).split(splitChar))];
-                 validData[key] = uniqueValues.join(joinChar);
+                const uniqueValues = [...new Set((validData[key] + splitChar + valueSnippet).split(splitChar))];
+                validData[key] = uniqueValues.join(joinChar);
             } else {
-                 validData[key] = [...new Set(valueSnippet.split(splitChar))].join(joinChar);
+                validData[key] = [...new Set(valueSnippet.split(splitChar))].join(joinChar);
             }
         }
     });
@@ -170,11 +170,11 @@ function displayfilterResults(data) {
                     <div class="stat-label">Số từ tổng</div>
                 </div>
                 <div class="stat-card" style="border: 1px solid #00b894; background: #fcfcfc;">
-                    <div class="stat-number" style="color: #00b894;">${totalEntries}</div>
+                    <div class="stat-number" style="color: #00b894;" id="ui-stat-valid">${totalEntries}</div>
                     <div class="stat-label">Số từ đã lọc (Hợp lệ)</div>
                 </div>
                 <div class="stat-card" style="border: 1px solid #ff7675; background: #fff5f5; cursor: pointer;" onclick="openFilterModal()" title="Nhấn để xem chi tiết">
-                    <div class="stat-number" style="color: #d63031;">${discardedEntries}</div>
+                    <div class="stat-number" style="color: #d63031;" id="ui-stat-invalid">${discardedEntries}</div>
                     <div class="stat-label">Từ bị loại (Xem)</div>
                 </div>
             `;
@@ -198,7 +198,7 @@ function displayfilterResults(data) {
 
 function displayInvalidLines(invalidArr) {
     const overlay = document.getElementById('filterModalOverlay');
-    if(!overlay) return; // Bảo vệ khi load thiếu DOM
+    if (!overlay) return; // Bảo vệ khi load thiếu DOM
 
     const countEl = document.getElementById('filterInvalidCount');
     const listEl = document.getElementById('filterInvalidList');
@@ -208,18 +208,26 @@ function displayInvalidLines(invalidArr) {
     }
 
     countEl.textContent = invalidArr.length;
-    // Map data to UI HTML
-    let listHTML = invalidArr.map(item => `<div><strong>🛑</strong> <code style="background:none;">${item.line}</code> <br> <span style="margin-left: 20px; color: #c62828;">➤ Lỗi: ${item.reason}</span></div>`).join('<hr style="margin:10px 0; border:0; border-top:1px dashed #ffcdd2;">');
-    
+    // Map data to UI HTML với các button tương tác
+    let listHTML = invalidArr.map((item, idx) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; opacity: 1; transition: opacity 0.3s;" id="invalid-wrap-${idx}">
+            <div style="flex:1;">
+                <strong>🛑</strong> <code id="invalid-line-text-${idx}" style="background:none;">${item.line}</code> <br> 
+                <span class="reason-text" style="margin-left: 20px; color: #c62828; font-size: 0.9em;">➤ Lỗi: ${item.reason}</span>
+            </div>
+            <button class="btn btn-secondary" style="padding: 0; font-size: 16px; margin-left:15px; flex: 0 0 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 50%; min-width: 34px;" onclick="toggleInvalidLine(${idx}, this)" title="Xoá lỗi này (Chấp nhận)">🗑️</button>
+        </div>
+    `).join('<hr style="margin:10px 0; border:0; border-top:1px dashed #ffcdd2;">');
+
     listEl.innerHTML = listHTML;
-    
+
     // Auto Show
     openFilterModal();
 }
 
 function openFilterModal() {
     const overlay = document.getElementById('filterModalOverlay');
-    if(overlay && invalidLinesInfo && invalidLinesInfo.length > 0) {
+    if (overlay && invalidLinesInfo && invalidLinesInfo.length > 0) {
         overlay.style.display = 'flex';
     } else {
         alert('Dữ liệu hoàn hảo, không có Name nào bị loại bỏ!');
@@ -228,7 +236,71 @@ function openFilterModal() {
 
 function closeFilterModal() {
     const overlay = document.getElementById('filterModalOverlay');
-    if(overlay) overlay.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+}
+
+function toggleInvalidLine(index, btnElement) {
+    let item = invalidLinesInfo[index];
+    let textElem = document.getElementById('invalid-line-text-' + index);
+    let wrapElem = document.getElementById('invalid-wrap-' + index);
+
+    // Tính toán update UI counter
+    let vStat = document.getElementById('ui-stat-valid');
+    let iStat = document.getElementById('ui-stat-invalid');
+
+    if (!item.forceAccepted) {
+        // Nhấn XOÁ lỗi -> Tức là Force Accept -> Gạch bỏ và thêm ngược vào Danh sách lọc
+        item.forceAccepted = true;
+
+        textElem.style.textDecoration = 'line-through';
+        wrapElem.style.opacity = '0.5';
+
+        btnElement.textContent = '↩️';
+        btnElement.title = 'Khôi phục lại lỗi';
+        btnElement.style.background = 'linear-gradient(135deg, #00b894, #00a085)';
+
+        const editArea = document.getElementById('filterEditArea');
+        let currentText = editArea.innerText || "";
+        if (currentText.trim() === '') {
+            editArea.innerText = item.line;
+        } else {
+            if (!currentText.endsWith('\n')) currentText += '\n';
+            console.log(currentText + item.line);
+            editArea.innerText = currentText + item.line;
+        }
+
+        editArea.scrollTop = editArea.scrollHeight;
+
+        if (vStat && iStat) {
+            vStat.textContent = parseInt(vStat.textContent) + 1;
+            iStat.textContent = parseInt(iStat.textContent) - 1;
+        }
+    } else {
+        // Nhấn KHÔI PHỤC lỗi -> Tức là Bỏ Force -> Hủy chữ gạch ngang và gỡ ra khỏi danh sách lộc
+        item.forceAccepted = false;
+
+        textElem.style.textDecoration = 'none';
+        wrapElem.style.opacity = '1';
+
+        btnElement.textContent = '🗑️';
+        btnElement.title = 'Xoá lỗi này (Chấp nhận)';
+        btnElement.style.background = 'linear-gradient(135deg, #fd79a8, #e84393)';
+
+        const editArea = document.getElementById('filterEditArea');
+        let lines = (editArea.innerText || "").split('\n');
+        let lineIndex = lines.lastIndexOf(item.line); // Tìm đoạn mã vừa chèn thêm vào ở dưới cùng
+        if (lineIndex !== -1) {
+            lines.splice(lineIndex, 1);
+            editArea.innerText = lines.join('\n');
+        }
+
+        editArea.scrollTop = editArea.scrollHeight;
+
+        if (vStat && iStat) {
+            vStat.textContent = parseInt(vStat.textContent) - 1;
+            iStat.textContent = parseInt(iStat.textContent) + 1;
+        }
+    }
 }
 
 function searchInfilter() {
@@ -274,7 +346,7 @@ function downloadOriginalfilterResult() {
     const outputText = Object.entries(filterdOriginalData)
         .map(([key, value]) => `${key}=${value}`)
         .join("\n");
-        
+
     downloadFile(outputText, `${currentFileName}_Original_${getNowFormatted()}.txt`);
     hideWaitLayer();
 }
@@ -289,13 +361,13 @@ function clearfilterResult() {
     document.getElementById('filterPreview').style.display = 'none';
     document.getElementById('filterError').style.display = 'none';
     document.getElementById('filterSuccess').style.display = 'none';
-    if(document.getElementById('filterModalOverlay')) document.getElementById('filterModalOverlay').style.display = 'none';
-    
+    if (document.getElementById('filterModalOverlay')) document.getElementById('filterModalOverlay').style.display = 'none';
+
     document.getElementById('filterSearchKey').value = '';
     document.getElementById('filterSearchMeaning').value = '';
     document.getElementById('filterSearchLine').value = '';
     document.getElementById('filterSearchResults').style.display = 'none';
-    
+
     filterdData = {};
     filterdOriginalData = {};
     invalidLinesInfo = [];
